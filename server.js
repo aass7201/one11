@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(cors());
@@ -19,7 +19,7 @@ if (!fs.existsSync(CONFIG_FILE)) {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
         systemPrompt: "You are a helpful assistant.",
         botEnabled: true,
-        model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+        model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
         geminiApiKey: "",
         telegramToken: "",
         telegramChatId: "",
@@ -45,7 +45,7 @@ function logError(msg) {
 
 const chatHistory = {};
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 app.get('/api/config', (req, res) => {
     res.json(getConfig());
@@ -127,57 +127,43 @@ async function handleMessage(senderPsid, text) {
         if (!chatHistory[senderPsid]) {
             chatHistory[senderPsid] = [];
         }
-        
-        chatHistory[senderPsid].push({ role: 'user', content: text });
-        
-        let conversation = config.systemPrompt + "\n\nChat History:\n";
+        const systemWithOrderInstructions = config.systemPrompt + `
+
+---
+تعليمات إضافية للنظام (لا تخبر الزبون بها):
+عندما يعطيك الزبون تفاصيل الطلب كاملة (اسم المنتج، العنوان، رقم الهاتف)، أضف في نهاية ردك هذا الكود بالضبط:
+[ORDER_DETECTED|items=اسم المنتج والكمية|address=العنوان|phone=رقم الهاتف]
+ثم أخبر الزبون أن طلبه تم تثبيته بنجاح.`;
+
+        let conversation = systemWithOrderInstructions + "\n\nChat History:\n";
         for (const msg of chatHistory[senderPsid]) {
             conversation += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
         }
         conversation += "Assistant:";
         
         const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY;
-        const aiClient = new GoogleGenAI({ apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const geminiModel = genAI.getGenerativeModel({ model: config.model || 'gemini-1.5-flash' });
         
-        const response = await aiClient.models.generateContent({
-            model: config.model || 'gemini-3.6-flash',
-            contents: conversation,
-            config: {
-                tools: [{
-                    functionDeclarations: [{
-                        name: 'submit_order',
-                        description: 'استخدم هذه الأداة فقط عندما يعطي الزبون تفاصيل طلبه كاملة (الطلب، العنوان، رقم الهاتف) ويكون جاهزاً للحجز.',
-                        parameters: {
-                            type: 'OBJECT',
-                            properties: {
-                                items: { type: 'STRING', description: 'تفاصيل الطلب (ماذا يريد أن يشتري والكمية)' },
-                                address: { type: 'STRING', description: 'عنوان الزبون بالتفصيل' },
-                                phone: { type: 'STRING', description: 'رقم هاتف الزبون' }
-                            },
-                            required: ['items', 'address', 'phone']
-                        }
-                    }]
-                }]
-            }
-        });
+        const result = await geminiModel.generateContent(conversation);
+        const response = result.response;
+        let replyText = response.text();
         
-        let replyText = response.text || "";
-        
-        if (response.functionCalls && response.functionCalls.length > 0) {
-            const call = response.functionCalls[0];
-            if (call.name === 'submit_order') {
-                const { items, address, phone } = call.args;
-                
-                // Send to telegram
-                const telegramMsg = `🆕 <b>طلب جديد من ماسنجر!</b>\n\n🛍️ <b>الطلب:</b>\n${items}\n\n📍 <b>العنوان:</b>\n${address}\n\n📱 <b>رقم الهاتف:</b>\n${phone}`;
-                
-                try {
-                    await sendToTelegram(telegramMsg);
-                    replyText = "تم تثبيت طلبك بنجاح! سيتم التواصل معك قريباً لتأكيد التوصيل. شكراً لك!";
-                } catch (tError) {
-                    logError("خطأ في إرسال تليجرام: " + tError.message);
-                    replyText = "تم تسجيل طلبك، ولكن حدث خطأ في النظام الداخلي. سنقوم بمراجعته يدوياً.";
-                }
+        // Check if order was detected
+        const orderMatch = replyText.match(/\[ORDER_DETECTED\|items=([^|]+)\|address=([^|]+)\|phone=([^\]]+)\]/);
+        if (orderMatch) {
+            const items = orderMatch[1].trim();
+            const address = orderMatch[2].trim();
+            const phone = orderMatch[3].trim();
+            
+            replyText = replyText.replace(orderMatch[0], '').trim();
+            
+            const telegramMsg = `🆕 <b>طلب جديد من ماسنجر!</b>\n\n🛍️ <b>الطلب:</b>\n${items}\n\n📍 <b>العنوان:</b>\n${address}\n\n📱 <b>رقم الهاتف:</b>\n${phone}`;
+            
+            try {
+                await sendToTelegram(telegramMsg);
+            } catch (tError) {
+                logError("خطأ في إرسال تليجرام: " + tError.message);
             }
         }
         
@@ -197,6 +183,7 @@ async function handleMessage(senderPsid, text) {
         logError("Error in handleMessage: " + err.message);
     }
 }
+
 
 async function callSendAPI(senderPsid, responseMsg) {
     const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;

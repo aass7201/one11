@@ -31,7 +31,7 @@ async function loadConfig() {
         
         document.getElementById('systemPrompt').value = config.systemPrompt || '';
         document.getElementById('botEnabledToggle').checked = config.botEnabled;
-        document.getElementById('modelSelect').value = config.model || 'gemini-2.0-flash';
+        document.getElementById('modelSelect').value = config.model || 'gemini-1.5-flash';
         document.getElementById('geminiApiKey').value = config.geminiApiKey ? '***مخفي***' : '';
         
         // Telegram Fields
