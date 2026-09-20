@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة البوت - Facebook & Gemini</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loginOverlay" class="overlay">
+        <div class="login-box card">
+            <h2>تسجيل الدخول</h2>
+            <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور..." />
+            <button id="loginBtn" class="btn primary-btn">دخول</button>
+            <p id="loginError" class="error-msg"></p>
+        </div>
+    </div>
+
+    <div class="container" style="display:none;" id="mainContent">
+        <header>
+            <h1>لوحة تحكم البوت 🤖</h1>
+            <div class="status-bar">
+                <div class="status-item"><span class="dot" id="dotFb"></span> Facebook</div>
+                <div class="status-item"><span class="dot" id="dotGemini"></span> Gemini</div>
+                <div class="status-item"><span class="dot" id="dotWebhook"></span> Webhook</div>
+            </div>
+        </header>
+
+        <main>
+            <section class="card">
+                <div class="header-flex">
+                    <h2>تعليمات الذكاء الاصطناعي</h2>
+                    <label class="switch">
+                        <input type="checkbox" id="botEnabledToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                
+                <p class="subtitle">حدد شخصية البوت، اللهجة، طريقة الرد، والتعليمات المهمة:</p>
+                <textarea id="systemPrompt" rows="10" placeholder="أنت موظف مبيعات..."></textarea>
+                
+                <div class="form-group">
+                    <label for="modelSelect">نموذج Gemini:</label>
+                    <select id="modelSelect">
+                        <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+                        <option value="gemini-3.6-pro">Gemini 3.6 Pro</option>
+                    </select>
+                </div>
+
+                <div class="actions">
+                    <button id="saveBtn" class="btn primary-btn">حفظ التعليمات</button>
+                    <span id="saveStatus"></span>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>إعدادات التليجرام 📱</h2>
+                <p class="subtitle">قم بوضع التوكن ومعرف الشات ليقوم البوت بإرسال الطلبات تلقائياً إليك.</p>
+                
+                <div class="form-group">
+                    <label for="telegramToken">توكن البوت (Bot Token):</label>
+                    <input type="text" id="telegramToken" placeholder="712345678:ABCDefg...">
+                </div>
+
+                <div class="form-group">
+                    <label for="telegramChatId">معرف الحساب (Chat ID):</label>
+                    <input type="text" id="telegramChatId" placeholder="123456789">
+                </div>
+
+                <div class="actions">
+                    <button id="saveTelegramBtn" class="btn primary-btn">حفظ إعدادات تليجرام</button>
+                    <span id="saveTelegramStatus"></span>
+                </div>
+            </section>
+
+            <section class="card error-log">
+                <h2>آخر الأخطاء</h2>
+                <div id="errorsContainer" class="logs-container">
+                    <!-- Errors will appear here -->
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>
