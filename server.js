@@ -19,7 +19,7 @@ if (!fs.existsSync(CONFIG_FILE)) {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
         systemPrompt: "You are a helpful assistant.",
         botEnabled: true,
-        model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
         geminiApiKey: "",
         telegramToken: "",
         telegramChatId: "",
@@ -140,7 +140,7 @@ async function handleMessage(senderPsid, text) {
         const aiClient = new GoogleGenAI({ apiKey });
         
         const response = await aiClient.models.generateContent({
-            model: config.model || 'gemini-2.0-flash',
+            model: config.model || 'gemini-3.6-flash',
             contents: conversation,
             config: {
                 tools: [{
