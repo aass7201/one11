@@ -31,7 +31,8 @@ async function loadConfig() {
         
         document.getElementById('systemPrompt').value = config.systemPrompt || '';
         document.getElementById('botEnabledToggle').checked = config.botEnabled;
-        document.getElementById('modelSelect').value = config.model || 'gemini-3.6-flash';
+        document.getElementById('modelSelect').value = config.model || 'gemini-2.0-flash';
+        document.getElementById('geminiApiKey').value = config.geminiApiKey ? '***مخفي***' : '';
         
         // Telegram Fields
         document.getElementById('telegramToken').value = config.telegramToken || '';
@@ -64,6 +65,7 @@ async function saveAllConfig(statusElementId) {
     const systemPrompt = document.getElementById('systemPrompt').value;
     const botEnabled = document.getElementById('botEnabledToggle').checked;
     const model = document.getElementById('modelSelect').value;
+    const geminiApiKey = document.getElementById('geminiApiKey').value.includes('مخفي') ? '' : document.getElementById('geminiApiKey').value;
     const telegramToken = document.getElementById('telegramToken').value;
     const telegramChatId = document.getElementById('telegramChatId').value;
     
@@ -80,6 +82,7 @@ async function saveAllConfig(statusElementId) {
                 systemPrompt,
                 botEnabled,
                 model,
+                geminiApiKey,
                 telegramToken,
                 telegramChatId
             })
